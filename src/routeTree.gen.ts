@@ -11,7 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppOnboardingRouteImport } from './routes/_app/onboarding'
+import { Route as AppBookmarksRouteImport } from './routes/_app/bookmarks'
+import { Route as AppFeedIndexRouteImport } from './routes/_app/feed.index'
+import { Route as AppSectorSlugRouteImport } from './routes/_app/sector.$slug'
+import { Route as AppFeedMineRouteImport } from './routes/_app/feed.mine'
+import { Route as AppArticleIdRouteImport } from './routes/_app/article.$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -23,38 +31,132 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOnboardingRoute = AppOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBookmarksRoute = AppBookmarksRouteImport.update({
+  id: '/bookmarks',
+  path: '/bookmarks',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFeedIndexRoute = AppFeedIndexRouteImport.update({
+  id: '/feed/',
+  path: '/feed/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSectorSlugRoute = AppSectorSlugRouteImport.update({
+  id: '/sector/$slug',
+  path: '/sector/$slug',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFeedMineRoute = AppFeedMineRouteImport.update({
+  id: '/feed/mine',
+  path: '/feed/mine',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppArticleIdRoute = AppArticleIdRouteImport.update({
+  id: '/article/$id',
+  path: '/article/$id',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/bookmarks': typeof AppBookmarksRoute
+  '/onboarding': typeof AppOnboardingRoute
+  '/settings': typeof AppSettingsRoute
+  '/article/$id': typeof AppArticleIdRoute
+  '/feed/mine': typeof AppFeedMineRoute
+  '/sector/$slug': typeof AppSectorSlugRoute
+  '/feed/': typeof AppFeedIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/bookmarks': typeof AppBookmarksRoute
+  '/onboarding': typeof AppOnboardingRoute
+  '/settings': typeof AppSettingsRoute
+  '/article/$id': typeof AppArticleIdRoute
+  '/feed/mine': typeof AppFeedMineRoute
+  '/sector/$slug': typeof AppSectorSlugRoute
+  '/feed': typeof AppFeedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
+  '/_app/bookmarks': typeof AppBookmarksRoute
+  '/_app/onboarding': typeof AppOnboardingRoute
+  '/_app/settings': typeof AppSettingsRoute
+  '/_app/article/$id': typeof AppArticleIdRoute
+  '/_app/feed/mine': typeof AppFeedMineRoute
+  '/_app/sector/$slug': typeof AppSectorSlugRoute
+  '/_app/feed/': typeof AppFeedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/signup'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/bookmarks'
+    | '/onboarding'
+    | '/settings'
+    | '/article/$id'
+    | '/feed/mine'
+    | '/sector/$slug'
+    | '/feed/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup'
-  id: '__root__' | '/' | '/login' | '/signup'
+  to:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/bookmarks'
+    | '/onboarding'
+    | '/settings'
+    | '/article/$id'
+    | '/feed/mine'
+    | '/sector/$slug'
+    | '/feed'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/signup'
+    | '/_app/bookmarks'
+    | '/_app/onboarding'
+    | '/_app/settings'
+    | '/_app/article/$id'
+    | '/_app/feed/mine'
+    | '/_app/sector/$slug'
+    | '/_app/feed/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
 }
@@ -75,6 +177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -82,14 +191,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/onboarding': {
+      id: '/_app/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AppOnboardingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/bookmarks': {
+      id: '/_app/bookmarks'
+      path: '/bookmarks'
+      fullPath: '/bookmarks'
+      preLoaderRoute: typeof AppBookmarksRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/feed/': {
+      id: '/_app/feed/'
+      path: '/feed'
+      fullPath: '/feed/'
+      preLoaderRoute: typeof AppFeedIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/sector/$slug': {
+      id: '/_app/sector/$slug'
+      path: '/sector/$slug'
+      fullPath: '/sector/$slug'
+      preLoaderRoute: typeof AppSectorSlugRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/feed/mine': {
+      id: '/_app/feed/mine'
+      path: '/feed/mine'
+      fullPath: '/feed/mine'
+      preLoaderRoute: typeof AppFeedMineRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/article/$id': {
+      id: '/_app/article/$id'
+      path: '/article/$id'
+      fullPath: '/article/$id'
+      preLoaderRoute: typeof AppArticleIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppBookmarksRoute: typeof AppBookmarksRoute
+  AppOnboardingRoute: typeof AppOnboardingRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppArticleIdRoute: typeof AppArticleIdRoute
+  AppFeedMineRoute: typeof AppFeedMineRoute
+  AppSectorSlugRoute: typeof AppSectorSlugRoute
+  AppFeedIndexRoute: typeof AppFeedIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppBookmarksRoute: AppBookmarksRoute,
+  AppOnboardingRoute: AppOnboardingRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppArticleIdRoute: AppArticleIdRoute,
+  AppFeedMineRoute: AppFeedMineRoute,
+  AppSectorSlugRoute: AppSectorSlugRoute,
+  AppFeedIndexRoute: AppFeedIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
