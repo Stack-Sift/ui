@@ -142,7 +142,7 @@ function ArticlePage() {
                       <Skeleton className="h-4 w-5/6" />
                       <Skeleton className="h-4 w-4/6" />
                     </div>
-                  ) : audience === t.value && current && current !== "loading" ? (
+                  ) : audience === t.value && current && typeof current !== "string" ? (
                     <div>
                       <p className="text-sm leading-relaxed text-card-foreground">{current.summary}</p>
                       {current.key_points.length > 0 && (
