@@ -1,6 +1,8 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-
 import appCss from "../styles.css?url";
+import { AuthProvider } from "@/lib/auth";
+import { ThemeProvider } from "@/lib/theme";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -14,7 +16,7 @@ function NotFoundComponent() {
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             Go home
           </Link>
@@ -29,21 +31,21 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "TechPulse — Engineering blog aggregator" },
+      {
+        name: "description",
+        content:
+          "Read and search top engineering blogs (Netflix, Uber, Meta, Google) with AI-generated, role-specific summaries.",
+      },
+      { property: "og:title", content: "TechPulse — Engineering blog aggregator" },
+      {
+        property: "og:description",
+        content: "Top engineering blogs with AI summaries tailored to your role.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-    ],
+    links: [{ rel: "stylesheet", href: appCss }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -65,5 +67,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <Outlet />
+        <Toaster />
+      </AuthProvider>
+    </ThemeProvider>
+  );
 }
