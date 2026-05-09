@@ -11,6 +11,11 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # The Supabase project URL and publishable/anon key are PUBLIC identifiers
+  # designed to ship in browser bundles (CSP, preconnect, client SDK init).
+  # They legitimately appear in code; Netlify's secret scanner gives false
+  # positives unless we explicitly mark them as non-secret.
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,VITE_SUPABASE_URL,VITE_SUPABASE_PUBLISHABLE_KEY,VITE_SUPABASE_PROJECT_ID"
 
 # SPA fallback — every unknown path serves index.html so the client router can take over.
 # (Remove this if you ship the SSR adapter — Netlify Functions will handle routing.)
