@@ -17,6 +17,8 @@ import { useTheme } from "@/lib/theme";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Footer } from "@/components/footer";
 import { cn } from "@/lib/utils";
 
 type Sector = { slug: string; name: string };
@@ -26,15 +28,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { theme, toggle } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
-  const [sectors, setSectors] = useState<Sector[]>([]);
+  const [tags, setTags] = useState<Sector[] | null>(null);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
     supabase
-      .from("sectors")
-      .select("slug, name")
-      .order("name")
-      .then(({ data }) => setSectors(data ?? []));
+      .rpc("get_tag_counts", { min_count: 2, max_results: 18 })
+      .then(({ data }) => {
+        if (cancelled) return;
+        setTags((data ?? []).map((row) => ({ slug: row.tag, name: row.tag })));
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const isActive = (path: string) => location.pathname === path;
@@ -50,26 +57,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="hidden w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
         <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-4 font-semibold text-sidebar-foreground">
           <Newspaper className="h-5 w-5 text-primary" />
-          TechPulse
+          Stack Sift
         </div>
         <nav className="flex-1 overflow-y-auto p-3 text-sm">
           <NavItem to="/feed" icon={Globe2} label="All News" active={isActive("/feed")} />
           <NavItem to="/feed/mine" icon={User} label="My Feed" active={isActive("/feed/mine")} />
 
           <div className="mt-6 px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Sectors
+            Tags
           </div>
           <div className="mt-2">
-            {sectors.map((s) => (
-              <NavItem
-                key={s.slug}
-                to="/sector/$slug"
-                params={{ slug: s.slug }}
-                icon={Sparkles}
-                label={s.name}
-                active={location.pathname === `/sector/${s.slug}`}
-              />
-            ))}
+            {tags === null
+              ? Array.from({ length: 8 }).map((_, i) => (
+                  <Skeleton key={i} className="mb-1 h-7 w-full rounded-md" />
+                ))
+              : tags.map((s) => (
+                  <NavItem
+                    key={s.slug}
+                    to="/sector/$slug"
+                    params={{ slug: s.slug }}
+                    icon={Sparkles}
+                    label={s.name}
+                    active={location.pathname === `/sector/${s.slug}`}
+                  />
+                ))}
           </div>
 
           <div className="mt-6 border-t border-sidebar-border pt-3">
@@ -101,7 +112,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </Button>
         </header>
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <div className="flex-1 overflow-y-auto">
+          <main>{children}</main>
+          <Footer variant="compact" className="mt-8" />
+        </div>
       </div>
     </div>
   );

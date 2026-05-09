@@ -1,0 +1,69 @@
+# Netlify configuration for Stack Sift
+#
+# NOTE: This project currently builds for Cloudflare Workers via @cloudflare/vite-plugin
+# (see vite.config.ts). To deploy to Netlify with SSR you'll need to switch the TanStack
+# Start adapter to Netlify Functions, or build as a static SPA. For now this file covers
+# the static-asset hosting + headers + SPA fallback story.
+
+[build]
+  command = "npm run build"
+  publish = "dist/client"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA fallback — every unknown path serves index.html so the client router can take over.
+# (Remove this if you ship the SSR adapter — Netlify Functions will handle routing.)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Long-lived caching for fingerprinted assets.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Service worker must always be revalidated to ship updates promptly.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Service-Worker-Allowed = "/"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+    Cache-Control = "public, max-age=3600"
+
+# Default security headers applied to every response.
+# CSP allows Supabase (REST + auth + realtime) and inline styles (Tailwind injects them).
+# If you wire third-party analytics or fonts, extend connect-src/style-src/font-src.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Resource-Policy = "same-origin"
+    X-DNS-Prefetch-Control = "on"
+    Content-Security-Policy = """
+      default-src 'self';
+      base-uri 'self';
+      object-src 'none';
+      frame-ancestors 'none';
+      form-action 'self';
+      img-src 'self' data: blob: https:;
+      font-src 'self' data:;
+      style-src 'self' 'unsafe-inline';
+      script-src 'self';
+      connect-src 'self' https://blsemjvvaojyanypjxwe.supabase.co wss://blsemjvvaojyanypjxwe.supabase.co;
+      worker-src 'self';
+      manifest-src 'self';
+      upgrade-insecure-requests
+    """

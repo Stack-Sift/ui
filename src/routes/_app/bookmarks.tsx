@@ -1,8 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { FeedList } from "@/components/feed-list";
+import { FeedRouteSkeleton } from "@/components/feed-skeleton";
+import { ErrorFallback } from "@/components/error-fallback";
 
 export const Route = createFileRoute("/_app/bookmarks")({
-  head: () => ({ meta: [{ title: "Bookmarks — TechPulse" }] }),
+  head: () => ({
+    meta: [
+      { title: "Bookmarks — Stack Sift" },
+      { name: "description", content: "Articles you've saved for later." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  pendingMs: 0,
+  pendingComponent: () => <FeedRouteSkeleton rows={3} />,
+  errorComponent: ({ error, reset }) => <ErrorFallback error={error} reset={reset} variant="panel" />,
   component: BookmarksPage,
 });
 

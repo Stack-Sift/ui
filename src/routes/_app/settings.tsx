@@ -2,7 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ProfileForm } from "./onboarding";
 
 export const Route = createFileRoute("/_app/settings")({
-  head: () => ({ meta: [{ title: "Settings — TechPulse" }] }),
+  head: () => ({
+    meta: [
+      { title: "Settings — Stack Sift" },
+      { name: "description", content: "Update your Stack Sift profile, preferences, and notifications." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  pendingMs: 0,
   component: SettingsPage,
 });
 

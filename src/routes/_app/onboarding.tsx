@@ -10,58 +10,68 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Newspaper } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ROLES = [
-  { value: "software_engineer", label: "Software Engineer" },
-  { value: "data_engineer", label: "Data Engineer" },
-  { value: "devops", label: "DevOps / SRE" },
-  { value: "product_manager", label: "Product Manager" },
+  { value: "developer", label: "Developer" },
+  { value: "cto", label: "CTO / Engineering Leader" },
+  { value: "pm", label: "Product Manager" },
+  { value: "data_scientist", label: "Data Scientist" },
+  { value: "founder", label: "Founder" },
+  { value: "designer", label: "Designer" },
   { value: "other", label: "Other" },
 ];
 
-type Sector = { slug: string; name: string };
+const TECH_TAG_LIMIT = 30;
 
 export function ProfileForm({ mode }: { mode: "onboarding" | "settings" }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState("");
-  const [role, setRole] = useState<string>("software_engineer");
-  const [department, setDepartment] = useState("");
-  const [sectors, setSectors] = useState<Sector[]>([]);
-  const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
+  const [role, setRole] = useState<string>("developer");
+  const [company, setCompany] = useState("");
+  const [preferredDomain, setPreferredDomain] = useState("");
+  const [domains, setDomains] = useState<string[] | null>(null);
+  const [topTags, setTopTags] = useState<string[] | null>(null);
+  const [techPreferences, setTechPreferences] = useState<string[]>([]);
+  const [interests, setInterests] = useState<string[]>([]);
   const [digestEnabled, setDigestEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("sectors").select("slug, name").order("name").then(({ data }) => setSectors(data ?? []));
-    supabase
-      .from("profiles")
-      .select("display_name, role, department")
-      .eq("id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setDisplayName(data.display_name ?? "");
-          setRole(data.role ?? "software_engineer");
-          setDepartment(data.department ?? "");
-        }
-      });
-    supabase
-      .from("user_preferences")
-      .select("sectors, digest_enabled")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setSelectedSectors(data.sectors ?? []);
-          setDigestEnabled(data.digest_enabled ?? false);
-        }
-      });
+    let cancelled = false;
+    Promise.all([
+      supabase.rpc("get_domain_counts"),
+      supabase.rpc("get_tag_counts", { min_count: 1, max_results: TECH_TAG_LIMIT }),
+      supabase
+        .from("profiles")
+        .select("display_name, role, company, preferred_domain, tech_preferences, interests, digest_enabled")
+        .eq("id", user.id)
+        .maybeSingle(),
+    ]).then(([{ data: domainRows }, { data: tagRows }, { data: profile }]) => {
+      if (cancelled) return;
+      setDomains((domainRows ?? []).map((row) => row.domain));
+      setTopTags((tagRows ?? []).map((row) => row.tag));
+      if (profile) {
+        setDisplayName(profile.display_name ?? "");
+        setRole(profile.role ?? "developer");
+        setCompany(profile.company ?? "");
+        setPreferredDomain(profile.preferred_domain ?? "");
+        setTechPreferences(profile.tech_preferences ?? []);
+        setInterests(profile.interests ?? []);
+        setDigestEnabled(profile.digest_enabled ?? false);
+      }
+      setProfileLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
-  const toggleSector = (slug: string) => {
-    setSelectedSectors((s) => (s.includes(slug) ? s.filter((x) => x !== slug) : [...s, slug]));
+  const toggleValue = (value: string, setter: React.Dispatch<React.SetStateAction<string[]>>) => {
+    setter((selected) => (selected.includes(value) ? selected.filter((x) => x !== value) : [...selected, value]));
   };
 
   const onSave = async (e: React.FormEvent) => {
@@ -70,24 +80,29 @@ export function ProfileForm({ mode }: { mode: "onboarding" | "settings" }) {
     setSaving(true);
     const { error: pErr } = await supabase
       .from("profiles")
-      .update({
+      .upsert({
+        id: user.id,
         display_name: displayName,
-        role: role as never,
-        department,
+        role,
+        company,
+        preferred_domain: preferredDomain || null,
+        tech_preferences: techPreferences,
+        interests,
+        digest_enabled: digestEnabled,
         onboarded: true,
-      })
-      .eq("id", user.id);
-    const { error: prErr } = await supabase
-      .from("user_preferences")
-      .upsert({ user_id: user.id, sectors: selectedSectors, digest_enabled: digestEnabled }, { onConflict: "user_id" });
+      }, { onConflict: "id" });
     setSaving(false);
-    if (pErr || prErr) {
-      toast.error((pErr ?? prErr)!.message);
+    if (pErr) {
+      toast.error(pErr.message);
       return;
     }
     toast.success("Saved!");
     if (mode === "onboarding") navigate({ to: "/feed" });
   };
+
+  if (!profileLoaded || domains === null || topTags === null) {
+    return <ProfileFormSkeleton />;
+  }
 
   return (
     <form onSubmit={onSave} className="space-y-6">
@@ -97,8 +112,8 @@ export function ProfileForm({ mode }: { mode: "onboarding" | "settings" }) {
           <Input id="dn" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
         </div>
         <div>
-          <Label htmlFor="dept">Department</Label>
-          <Input id="dept" placeholder="Backend, Frontend, Infra…" value={department} onChange={(e) => setDepartment(e.target.value)} />
+          <Label htmlFor="company">Company</Label>
+          <Input id="company" placeholder="Acme, Inc." value={company} onChange={(e) => setCompany(e.target.value)} />
         </div>
       </div>
 
@@ -115,13 +130,39 @@ export function ProfileForm({ mode }: { mode: "onboarding" | "settings" }) {
       </div>
 
       <div>
-        <Label>Preferred sectors</Label>
-        <p className="mb-3 text-xs text-muted-foreground">Used to filter your "My Feed".</p>
+        <Label>Preferred domain</Label>
+        <p className="mb-3 text-xs text-muted-foreground">Used with tags and trend score to rank your feed.</p>
+        <Select value={preferredDomain} onValueChange={setPreferredDomain}>
+          <SelectTrigger><SelectValue placeholder="Pick a domain" /></SelectTrigger>
+          <SelectContent>
+            {domains.map((domain) => (
+              <SelectItem key={domain} value={domain}>{domain}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label>Tech preferences</Label>
+        <p className="mb-3 text-xs text-muted-foreground">Specific technologies tagged across the catalog. Showing the most common.</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {sectors.map((s) => (
-            <label key={s.slug} className="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-card p-3 text-sm">
-              <Checkbox checked={selectedSectors.includes(s.slug)} onCheckedChange={() => toggleSector(s.slug)} />
-              <span>{s.name}</span>
+          {topTags.map((tag) => (
+            <label key={`tech-${tag}`} className="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-card p-3 text-sm">
+              <Checkbox checked={techPreferences.includes(tag)} onCheckedChange={() => toggleValue(tag, setTechPreferences)} />
+              <span className="capitalize">{tag}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <Label>Interests</Label>
+        <p className="mb-3 text-xs text-muted-foreground">Broad domains we cover. Pick any that should weigh into your feed.</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {domains.map((domain) => (
+            <label key={`interest-${domain}`} className="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-card p-3 text-sm">
+              <Checkbox checked={interests.includes(domain)} onCheckedChange={() => toggleValue(domain, setInterests)} />
+              <span>{domain}</span>
             </label>
           ))}
         </div>
@@ -142,8 +183,56 @@ export function ProfileForm({ mode }: { mode: "onboarding" | "settings" }) {
   );
 }
 
+function ProfileFormSkeleton() {
+  return (
+    <div className="space-y-6" aria-busy="true" aria-live="polite">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-32" />
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full rounded-md" />
+          ))}
+        </div>
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-4 w-24" />
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full rounded-md" />
+          ))}
+        </div>
+      </div>
+      <Skeleton className="h-10 w-32" />
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_app/onboarding")({
-  head: () => ({ meta: [{ title: "Welcome — TechPulse" }] }),
+  head: () => ({
+    meta: [
+      { title: "Welcome — Stack Sift" },
+      { name: "description", content: "Set up your Stack Sift profile and pick the topics you care about." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: OnboardingPage,
 });
 
@@ -151,7 +240,7 @@ function OnboardingPage() {
   return (
     <div className="mx-auto max-w-2xl px-6 py-10">
       <div className="mb-8 flex items-center gap-2 font-semibold">
-        <Newspaper className="h-5 w-5 text-primary" /> TechPulse
+        <Newspaper className="h-5 w-5 text-primary" /> Stack Sift
       </div>
       <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome! Let's personalize your feed.</h1>
       <p className="mt-2 text-sm text-muted-foreground">

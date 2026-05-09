@@ -125,6 +125,63 @@ export type Database = {
           },
         ]
       }
+      blog_entries: {
+        Row: {
+          domain: string | null
+          estimated_read_min: number | null
+          fetched_at: string | null
+          id: string
+          published_at: string | null
+          source_name: string | null
+          summary_for_cto: string | null
+          summary_for_data_sci: string | null
+          summary_for_designer: string | null
+          summary_for_dev: string | null
+          summary_for_founder: string | null
+          summary_for_pm: string | null
+          tags: string[] | null
+          title: string
+          trend_score: string | null
+          url: string
+        }
+        Insert: {
+          domain?: string | null
+          estimated_read_min?: number | null
+          fetched_at?: string | null
+          id?: string
+          published_at?: string | null
+          source_name?: string | null
+          summary_for_cto?: string | null
+          summary_for_data_sci?: string | null
+          summary_for_designer?: string | null
+          summary_for_dev?: string | null
+          summary_for_founder?: string | null
+          summary_for_pm?: string | null
+          tags?: string[] | null
+          title: string
+          trend_score?: string | null
+          url: string
+        }
+        Update: {
+          domain?: string | null
+          estimated_read_min?: number | null
+          fetched_at?: string | null
+          id?: string
+          published_at?: string | null
+          source_name?: string | null
+          summary_for_cto?: string | null
+          summary_for_data_sci?: string | null
+          summary_for_designer?: string | null
+          summary_for_dev?: string | null
+          summary_for_founder?: string | null
+          summary_for_pm?: string | null
+          tags?: string[] | null
+          title?: string
+          trend_score?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
       digest_subscriptions: {
         Row: {
           created_at: string
@@ -148,30 +205,45 @@ export type Database = {
       }
       profiles: {
         Row: {
+          company: string | null
           created_at: string
           department: string | null
           display_name: string | null
+          digest_enabled: boolean
           id: string
+          interests: string[]
           onboarded: boolean
-          role: Database["public"]["Enums"]["user_job_role"] | null
+          preferred_domain: string | null
+          role: string | null
+          tech_preferences: string[]
           updated_at: string
         }
         Insert: {
+          company?: string | null
           created_at?: string
           department?: string | null
           display_name?: string | null
+          digest_enabled?: boolean
           id: string
+          interests?: string[]
           onboarded?: boolean
-          role?: Database["public"]["Enums"]["user_job_role"] | null
+          preferred_domain?: string | null
+          role?: string | null
+          tech_preferences?: string[]
           updated_at?: string
         }
         Update: {
+          company?: string | null
           created_at?: string
           department?: string | null
           display_name?: string | null
+          digest_enabled?: boolean
           id?: string
+          interests?: string[]
           onboarded?: boolean
-          role?: Database["public"]["Enums"]["user_job_role"] | null
+          preferred_domain?: string | null
+          role?: string | null
+          tech_preferences?: string[]
           updated_at?: string
         }
         Relationships: []
@@ -289,6 +361,17 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      get_tag_counts: {
+        Args: {
+          min_count?: number
+          max_results?: number
+        }
+        Returns: { tag: string; n: number }[]
+      }
+      get_domain_counts: {
+        Args: Record<string, never>
+        Returns: { domain: string; n: number }[]
       }
     }
     Enums: {

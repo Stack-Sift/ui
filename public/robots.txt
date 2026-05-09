@@ -1,0 +1,10 @@
+# Stack Sift robots.txt
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /signup
+Disallow: /onboarding
+Disallow: /settings
+Disallow: /bookmarks
+
+Sitemap: /sitemap.xml

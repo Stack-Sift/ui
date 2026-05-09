@@ -11,6 +11,41 @@ type Options = {
   search?: string;
 };
 
+type PreferenceRow = {
+  preferred_domain: string | null;
+  tech_preferences: string[] | null;
+  interests: string[] | null;
+};
+
+const TREND_WEIGHT: Record<string, number> = {
+  hot: 4,
+  trending: 3,
+  rising: 2,
+  new: 1,
+};
+
+function normalize(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function scoreArticle(article: ArticleCardData, preferences?: PreferenceRow | null) {
+  const trend = TREND_WEIGHT[normalize(article.trend_score ?? "")] ?? 0;
+  if (!preferences) return trend;
+
+  const techTerms = new Set((preferences.tech_preferences ?? []).map(normalize));
+  const tagMatches = article.tags.filter((tag) => techTerms.has(normalize(tag))).length;
+
+  const interestDomains = new Set((preferences.interests ?? []).map(normalize));
+  const articleDomain = article.domain ? normalize(article.domain) : null;
+  const interestMatch = articleDomain ? interestDomains.has(articleDomain) : false;
+  const preferredDomainMatch =
+    preferences.preferred_domain && articleDomain
+      ? normalize(preferences.preferred_domain) === articleDomain
+      : false;
+
+  return trend + tagMatches * 3 + (interestMatch ? 2 : 0) + (preferredDomainMatch ? 2 : 0);
+}
+
 export function useFeed(opts: Options) {
   const [articles, setArticles] = useState<ArticleCardData[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -22,16 +57,19 @@ export function useFeed(opts: Options) {
     const { data: sess } = await supabase.auth.getSession();
     const userId = sess.session?.user.id;
 
-    let prefSectors: string[] = [];
+    let preferences: PreferenceRow | null = null;
     if (opts.mine && userId) {
-      const { data: pref } = await supabase.from("user_preferences").select("sectors").eq("user_id", userId).maybeSingle();
-      prefSectors = pref?.sectors ?? [];
+      const { data: pref } = await supabase
+        .from("profiles")
+        .select("preferred_domain, tech_preferences, interests")
+        .eq("id", userId)
+        .maybeSingle();
+      preferences = pref as PreferenceRow | null;
     }
 
     let bookmarkIds: string[] | null = null;
-    if (opts.bookmarksOnly && userId) {
-      const { data: bms } = await supabase.from("bookmarks").select("article_id").eq("user_id", userId);
-      bookmarkIds = (bms ?? []).map((b) => b.article_id);
+    if (opts.bookmarksOnly) {
+      bookmarkIds = JSON.parse(localStorage.getItem("stack-sift-bookmarks") ?? "[]") as string[];
       if (bookmarkIds.length === 0) {
         setArticles([]);
         return;
@@ -39,13 +77,11 @@ export function useFeed(opts: Options) {
     }
 
     let query = supabase
-      .from("articles")
-      .select("id, title, url, excerpt, image_url, published_at, sector_slugs, source:sources(name, slug)")
+      .from("blog_entries")
+      .select("id, title, url, source_name, domain, tags, trend_score, estimated_read_min, summary_for_dev, summary_for_cto, summary_for_pm, summary_for_data_sci, summary_for_founder, summary_for_designer, published_at")
       .order("published_at", { ascending: false, nullsFirst: false })
-      .limit(50);
+      .limit(100);
 
-    if (opts.sectorSlug) query = query.contains("sector_slugs", [opts.sectorSlug]);
-    if (opts.mine && prefSectors.length > 0) query = query.overlaps("sector_slugs", prefSectors);
     if (bookmarkIds) query = query.in("id", bookmarkIds);
     if (opts.search) query = query.ilike("title", `%${opts.search}%`);
 
@@ -56,23 +92,46 @@ export function useFeed(opts: Options) {
       return;
     }
 
-    let userBookmarks = new Set<string>();
-    if (userId && data && data.length > 0) {
-      const { data: bms } = await supabase
-        .from("bookmarks")
-        .select("article_id")
-        .eq("user_id", userId)
-        .in("article_id", data.map((a) => a.id));
-      userBookmarks = new Set((bms ?? []).map((b) => b.article_id));
-    }
+    const userBookmarks = new Set(JSON.parse(localStorage.getItem("stack-sift-bookmarks") ?? "[]") as string[]);
+    const techTerms = new Set((preferences?.tech_preferences ?? []).map(normalize));
+    const interestDomains = new Set((preferences?.interests ?? []).map(normalize));
 
-    setArticles(
-      (data ?? []).map((a) => ({
-        ...a,
-        source: Array.isArray(a.source) ? a.source[0] ?? null : a.source,
+    const mapped = (data ?? []).map((a) => ({
+        id: a.id,
+        title: a.title,
+        url: a.url,
+        source_name: a.source_name,
+        domain: a.domain,
+        tags: a.tags ?? [],
+        trend_score: a.trend_score,
+        estimated_read_min: a.estimated_read_min,
+        published_at: a.published_at,
+        summary:
+          a.summary_for_dev ??
+          a.summary_for_cto ??
+          a.summary_for_pm ??
+          a.summary_for_data_sci ??
+          a.summary_for_founder ??
+          a.summary_for_designer ??
+          null,
         bookmarked: userBookmarks.has(a.id),
-      })) as ArticleCardData[],
-    );
+      })) as ArticleCardData[];
+
+    const filtered = mapped.filter((article) => {
+      if (opts.sectorSlug && !article.tags.map(normalize).includes(normalize(opts.sectorSlug))) return false;
+      if (!opts.mine || !preferences) return true;
+      const articleDomain = article.domain ? normalize(article.domain) : null;
+      const hasTagMatch = article.tags.some((tag) => techTerms.has(normalize(tag)));
+      const hasInterestMatch = articleDomain ? interestDomains.has(articleDomain) : false;
+      const hasPreferredDomainMatch =
+        preferences.preferred_domain && articleDomain
+          ? normalize(preferences.preferred_domain) === articleDomain
+          : false;
+      const noPreferences = techTerms.size === 0 && interestDomains.size === 0 && !preferences.preferred_domain;
+      return hasTagMatch || hasInterestMatch || hasPreferredDomainMatch || noPreferences;
+    });
+
+    setArticles(filtered.sort((a, b) => scoreArticle(b, preferences) - scoreArticle(a, preferences)));
   }, [opts.sectorSlug, opts.mine, opts.bookmarksOnly, opts.search]);
 
   useEffect(() => {

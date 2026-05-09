@@ -2,43 +2,37 @@ import { Link } from "@tanstack/react-router";
 import { Bookmark, BookmarkCheck, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth";
 import { useState } from "react";
-import { toast } from "sonner";
 
 export type ArticleCardData = {
   id: string;
   title: string;
   url: string;
-  excerpt: string | null;
-  image_url: string | null;
+  summary: string | null;
   published_at: string | null;
-  sector_slugs: string[];
-  source: { name: string; slug: string } | null;
+  source_name: string | null;
+  domain: string | null;
+  tags: string[];
+  trend_score: string | null;
+  estimated_read_min: number | null;
   bookmarked: boolean;
 };
 
 export function ArticleCard({ article }: { article: ArticleCardData }) {
-  const { user } = useAuth();
   const [saved, setSaved] = useState(article.bookmarked);
-  const [busy, setBusy] = useState(false);
 
   const toggleBookmark = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!user) return;
-    setBusy(true);
+    const ids = new Set(JSON.parse(localStorage.getItem("stack-sift-bookmarks") ?? "[]") as string[]);
     if (saved) {
-      const { error } = await supabase.from("bookmarks").delete().eq("user_id", user.id).eq("article_id", article.id);
-      if (!error) setSaved(false);
-      else toast.error(error.message);
+      ids.delete(article.id);
+      setSaved(false);
     } else {
-      const { error } = await supabase.from("bookmarks").insert({ user_id: user.id, article_id: article.id });
-      if (!error) setSaved(true);
-      else toast.error(error.message);
+      ids.add(article.id);
+      setSaved(true);
     }
-    setBusy(false);
+    localStorage.setItem("stack-sift-bookmarks", JSON.stringify([...ids]));
   };
 
   return (
@@ -46,8 +40,8 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
       <Link to="/article/$id" params={{ id: article.id }} className="block p-5">
         <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
-            {article.source && (
-              <span className="font-medium text-foreground">{article.source.name}</span>
+            {article.source_name && (
+              <span className="font-medium text-foreground">{article.source_name}</span>
             )}
             {article.published_at && (
               <>
@@ -55,20 +49,28 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
                 <time>{new Date(article.published_at).toLocaleDateString()}</time>
               </>
             )}
+            {article.estimated_read_min && (
+              <>
+                <span>·</span>
+                <span>{article.estimated_read_min} min read</span>
+              </>
+            )}
           </div>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleBookmark} disabled={busy} aria-label="Bookmark">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleBookmark} aria-label="Bookmark">
             {saved ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4" />}
           </Button>
         </div>
         <h2 className="mt-2 text-lg font-semibold leading-snug text-card-foreground group-hover:text-primary">
           {article.title}
         </h2>
-        {article.excerpt && (
-          <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{article.excerpt}</p>
+        {article.summary && (
+          <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{article.summary}</p>
         )}
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          {article.sector_slugs.slice(0, 4).map((s) => (
-            <Badge key={s} variant="secondary" className="text-xs">
+          {article.domain && <Badge variant="outline" className="text-xs">{article.domain}</Badge>}
+          {article.trend_score && <Badge className="text-xs capitalize">{article.trend_score}</Badge>}
+          {article.tags.slice(0, 4).map((s) => (
+            <Badge key={s} variant="secondary" className="text-xs capitalize">
               {s}
             </Badge>
           ))}

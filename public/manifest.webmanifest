@@ -1,0 +1,45 @@
+{
+  "name": "Stack Sift",
+  "short_name": "Stack Sift",
+  "description": "Curated tech reading ranked by your interests, preferred domain, tags, and trend score.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#1d4ed8",
+  "categories": ["news", "productivity"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "All News", "short_name": "All", "url": "/feed", "description": "Latest blog entries" },
+    { "name": "My Feed", "short_name": "Mine", "url": "/feed/mine", "description": "Articles ranked for you" },
+    { "name": "Bookmarks", "short_name": "Saved", "url": "/bookmarks", "description": "Articles you've saved" }
+  ]
+}

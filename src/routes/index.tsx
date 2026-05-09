@@ -1,17 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Newspaper, Sparkles, Bookmark, Layers } from "lucide-react";
+import { Footer } from "@/components/footer";
+
+const LANDING_TITLE = "Stack Sift — Curated tech signals ranked for your interests";
+const LANDING_DESCRIPTION =
+  "Read blog entries matched to your company context, preferred domain, tech interests, tags, and trend score.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "TechPulse — Engineering blogs, AI-summarized for your role" },
-      {
-        name: "description",
-        content:
-          "Aggregate Netflix, Uber, Meta, Google and more. Get AI summaries tailored to engineers, data, devops, and PMs.",
-      },
+      { title: LANDING_TITLE },
+      { name: "description", content: LANDING_DESCRIPTION },
+      { property: "og:title", content: LANDING_TITLE },
+      { property: "og:description", content: LANDING_DESCRIPTION },
+      { property: "og:type", content: "website" },
+      { name: "twitter:title", content: LANDING_TITLE },
+      { name: "twitter:description", content: LANDING_DESCRIPTION },
     ],
+    links: [{ rel: "canonical", href: "/" }],
   }),
   component: Landing,
 });
@@ -23,7 +30,7 @@ function Landing() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <Link to="/" className="flex items-center gap-2 font-semibold">
             <Newspaper className="h-5 w-5 text-primary" />
-            <span>TechPulse</span>
+            <span>Stack Sift</span>
           </Link>
           <nav className="flex items-center gap-3">
             <Link to="/login">
@@ -41,16 +48,16 @@ function Landing() {
       <main>
         <section className="mx-auto max-w-4xl px-6 py-24 text-center">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-xs text-muted-foreground">
-            <Sparkles className="h-3 w-3" /> AI summaries tailored to your role
+            <Sparkles className="h-3 w-3" /> Ranked by tags and trend score
           </div>
           <h1 className="text-5xl font-bold tracking-tight text-foreground md:text-6xl">
-            Engineering blogs,
+            Stack Sift
             <br />
-            <span className="text-primary">summarized for you.</span>
+            <span className="text-primary">filters the signal.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            One feed for Netflix, Uber, Meta, Google, Airbnb, Stripe and more.
-            Get the gist in 30 seconds — written for your role.
+            A personalized reading feed built from live blog entries. Tell us your company,
+            domain, tech preferences, and interests, then get articles ranked around what matters.
           </p>
           <div className="mt-8 flex justify-center gap-3">
             <Link to="/signup">
@@ -68,18 +75,18 @@ function Landing() {
           {[
             {
               icon: Layers,
-              title: "All the best blogs",
-              body: "Netflix, Uber, Meta, Google, Airbnb, Stripe — one feed.",
+              title: "Live blog entries",
+              body: "Read from the Supabase blog_entries database with source, domain, tags, and read time.",
             },
             {
               icon: Sparkles,
-              title: "Role-based summaries",
-              body: "Software, Data, DevOps, PM — pick your lens.",
+              title: "Interest ranking",
+              body: "Your feed weighs tags, preferred domain, tech choices, and trend score.",
             },
             {
               icon: Bookmark,
-              title: "Save & organize",
-              body: "Bookmark articles, follow sectors, get a daily digest.",
+              title: "Role summaries",
+              body: "Switch between developer, CTO, PM, data, founder, and designer summaries.",
             },
           ].map(({ icon: Icon, title, body }) => (
             <div key={title} className="rounded-lg border border-border bg-card p-6">
@@ -91,9 +98,7 @@ function Landing() {
         </section>
       </main>
 
-      <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        © TechPulse — built on Lovable.
-      </footer>
+      <Footer />
     </div>
   );
 }

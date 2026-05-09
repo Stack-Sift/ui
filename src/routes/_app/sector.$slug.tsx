@@ -1,28 +1,35 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { FeedList } from "@/components/feed-list";
+import { FeedRouteSkeleton } from "@/components/feed-skeleton";
+import { ErrorFallback } from "@/components/error-fallback";
 
 export const Route = createFileRoute("/_app/sector/$slug")({
-  head: () => ({ meta: [{ title: "Sector — TechPulse" }] }),
+  head: ({ params }) => {
+    const title = `${params.slug} articles — Stack Sift`;
+    const description = `All Stack Sift articles tagged with ${params.slug}.`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+      ],
+    };
+  },
+  pendingMs: 0,
+  pendingComponent: () => <FeedRouteSkeleton />,
+  errorComponent: ({ error, reset }) => <ErrorFallback error={error} reset={reset} variant="panel" />,
   component: SectorPage,
 });
 
 function SectorPage() {
   const { slug } = Route.useParams();
-  const [name, setName] = useState(slug);
-
-  useEffect(() => {
-    supabase.from("sectors").select("name").eq("slug", slug).maybeSingle().then(({ data }) => {
-      if (data?.name) setName(data.name);
-    });
-  }, [slug]);
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
-      <h1 className="mb-1 text-2xl font-bold tracking-tight text-foreground">{name}</h1>
-      <p className="mb-6 text-sm text-muted-foreground">All articles tagged in this sector.</p>
-      <FeedList sectorSlug={slug} emptyMessage="No articles in this sector yet." />
+      <h1 className="mb-1 text-2xl font-bold capitalize tracking-tight text-foreground">{slug}</h1>
+      <p className="mb-6 text-sm text-muted-foreground">All articles tagged with this topic.</p>
+      <FeedList sectorSlug={slug} emptyMessage="No articles with this tag yet." />
     </div>
   );
 }
