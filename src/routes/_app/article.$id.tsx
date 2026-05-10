@@ -1,9 +1,10 @@
 import { createFileRoute, getRouteApi, Link, notFound } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink, Sparkles } from "lucide-react";
+import { ExternalLink, Sparkles, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ErrorFallback } from "@/components/error-fallback";
 
@@ -17,6 +18,15 @@ const TABS: { value: Audience; label: string }[] = [
   { value: "founder", label: "Founder" },
   { value: "designer", label: "Design" },
 ];
+
+const ROLE_TO_AUDIENCE: Record<string, Audience> = {
+  developer: "dev",
+  cto: "cto",
+  pm: "pm",
+  data_scientist: "data_sci",
+  founder: "founder",
+  designer: "designer",
+};
 
 type Article = {
   id: string;
@@ -85,7 +95,9 @@ function ArticleSkeleton() {
 
 function ArticlePage() {
   const { article } = articleRoute.useLoaderData() as { article: Article };
-  const [audience, setAudience] = useState<Audience>("dev");
+  const { user } = useAuth();
+  const [userAudience, setUserAudience] = useState<Audience>("dev");
+  const [audience, setAudience] = useState<Audience>("cto");
 
   const summaries: Record<Audience, string | null> = {
     dev: article.summary_for_dev,
@@ -95,7 +107,30 @@ function ArticlePage() {
     founder: article.summary_for_founder,
     designer: article.summary_for_designer,
   };
-  const current = summaries[audience];
+
+  // Fetch the user's role from their profile and derive their audience
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        const mapped = data?.role ? (ROLE_TO_AUDIENCE[data.role] ?? "dev") : "dev";
+        setUserAudience(mapped);
+        // Default the right sidebar to the first tab that isn't the user's role
+        const firstOther = TABS.find((t) => t.value !== mapped);
+        if (firstOther) setAudience(firstOther.value);
+      });
+  }, [user]);
+
+  // Tabs shown in the right sidebar — everything except the user's own role
+  const otherTabs = TABS.filter((t) => t.value !== userAudience);
+
+  const userTabLabel = TABS.find((t) => t.value === userAudience)?.label ?? "Your Role";
+  const userSummary = summaries[userAudience];
+
   const description =
     summaries.dev ?? summaries.cto ?? summaries.pm ?? summaries.data_sci ?? summaries.founder ?? summaries.designer ?? article.title;
 
@@ -179,9 +214,19 @@ function ArticlePage() {
             </a>
           </div>
 
-          {current && (
-            <p className="mt-6 text-lg leading-relaxed text-muted-foreground">{current}</p>
-          )}
+          {/* Personalized summary for the user's own role */}
+          <div className="mt-6 rounded-lg border border-border bg-card p-5">
+            <div className="mb-3 flex items-center gap-2">
+              <User className="h-4 w-4 text-primary" />
+              <span className="font-semibold text-card-foreground">Your Summary</span>
+              <Badge variant="secondary" className="ml-1 text-xs">{userTabLabel}</Badge>
+            </div>
+            {userSummary ? (
+              <p className="text-sm leading-relaxed text-card-foreground">{userSummary}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">No summary available for your role yet.</p>
+            )}
+          </div>
         </article>
 
         <aside className="lg:sticky lg:top-6 lg:self-start">
@@ -191,24 +236,30 @@ function ArticlePage() {
               <h2 className="font-semibold text-card-foreground">AI Summary</h2>
             </div>
             <Tabs value={audience} onValueChange={(v) => setAudience(v as Audience)}>
-              <TabsList className="grid w-full grid-cols-3 text-xs">
-                {TABS.map((t) => (
-                  <TabsTrigger key={t.value} value={t.value} className="text-xs">{t.label}</TabsTrigger>
+              <TabsList className="flex h-auto w-full flex-wrap gap-1 bg-muted p-1">
+                {otherTabs.map((t) => (
+                  <TabsTrigger
+                    key={t.value}
+                    value={t.value}
+                    className="flex-1 basis-[30%] text-xs"
+                  >
+                    {t.label}
+                  </TabsTrigger>
                 ))}
               </TabsList>
-              {TABS.map((t) => (
+              {otherTabs.map((t) => (
                 <TabsContent key={t.value} value={t.value} className="mt-4">
-                  {audience === t.value && summaries[t.value] ? (
+                  {summaries[t.value] ? (
                     <p className="text-sm leading-relaxed text-card-foreground">{summaries[t.value]}</p>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No summary is available for this role yet.</p>
+                    <p className="text-sm text-muted-foreground">No summary available for this role yet.</p>
                   )}
                 </TabsContent>
               ))}
             </Tabs>
-            <p className="mt-4 text-[11px] text-muted-foreground">
+            {/* <p className="mt-4 text-[11px] text-muted-foreground">
               Summaries come from the blog_entries role-specific summary fields.
-            </p>
+            </p> */}
           </div>
         </aside>
       </div>

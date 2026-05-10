@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Newspaper } from "lucide-react";
 import { Footer } from "@/components/footer";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
@@ -65,6 +66,7 @@ function SignupPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      <ThemeToggle className="fixed right-4 top-4 z-50" />
       <main className="flex flex-1 items-center justify-center px-4 py-10">
         <div className="w-full max-w-sm">
           <Link to="/" className="mb-6 flex items-center justify-center gap-2 font-semibold">

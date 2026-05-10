@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Newspaper, Sparkles, Bookmark, Layers } from "lucide-react";
 import { Footer } from "@/components/footer";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const LANDING_TITLE = "Stack Sift — Curated tech signals ranked for your interests";
 const LANDING_DESCRIPTION =
@@ -33,6 +34,7 @@ function Landing() {
             <span>Stack Sift</span>
           </Link>
           <nav className="flex items-center gap-3">
+            <ThemeToggle />
             <Link to="/login">
               <Button variant="ghost" size="sm">
                 Sign in
@@ -60,7 +62,7 @@ function Landing() {
             domain, tech preferences, and interests, then get articles ranked around what matters.
           </p>
           <div className="mt-8 flex justify-center gap-3">
-            <Link to="/signup">
+            <Link to="/feed">
               <Button size="lg">Start reading free</Button>
             </Link>
             <Link to="/login">
