@@ -14,7 +14,7 @@ const isNetlify = process.env.NETLIFY === "true";
 export default defineConfig({
   // On Netlify, disable the Cloudflare plugin and prerender to static HTML.
   // Otherwise enable Cloudflare Workers SSR.
-  cloudflare: isNetlify ? false : {},
+  cloudflare: isNetlify ? false : { viteEnvironment: { name: "ssr" } },
   tanstackStart: {
     prerender: {
       enabled: isNetlify,
