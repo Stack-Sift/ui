@@ -6,18 +6,18 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-// CF_PAGES=1 is injected automatically by Cloudflare Pages during builds.
-// On Netlify (and local dev) it is absent, so we fall back to Node.js + prerender.
-const isCloudflare = process.env.CF_PAGES === "1";
+// Netlify always injects NETLIFY=true during its builds. Anything else
+// (Cloudflare Pages, Cloudflare Workers Builds, local dev) defaults to the
+// Cloudflare Workers target so `dist/server/index.js` is generated for wrangler.
+const isNetlify = process.env.NETLIFY === "true";
 
 export default defineConfig({
-  // Enable Cloudflare Workers plugin on CF Pages; keep Node.js target elsewhere
-  // so Netlify's prerender step can start a local server and write static HTML.
-  cloudflare: isCloudflare ? {} : false,
+  // On Netlify, disable the Cloudflare plugin and prerender to static HTML.
+  // Otherwise enable Cloudflare Workers SSR.
+  cloudflare: isNetlify ? false : {},
   tanstackStart: {
     prerender: {
-      // Prerender is only needed for the static Netlify build.
-      enabled: !isCloudflare,
+      enabled: isNetlify,
       crawlLinks: true,
     },
   },
