@@ -77,8 +77,8 @@ function Landing() {
           {[
             {
               icon: Layers,
-              title: "Live blog entries",
-              body: "Read from the Supabase blog_entries database with source, domain, tags, and read time.",
+              title: "Always up to date",
+              body: "Fresh articles from engineering blogs, product teams, and tech communities — tagged, sourced, and ready to read.",
             },
             {
               icon: Sparkles,
