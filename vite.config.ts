@@ -7,17 +7,17 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
-  // Disable @cloudflare/vite-plugin so the server bundle targets Node.js.
-  // This lets TanStack Start's prerender step start a local preview server
-  // and write static HTML into dist/client/, giving Netlify an index.html
-  // for its SPA fallback redirect (/* → /index.html).
-  cloudflare: false,
-  tanstackStart: {
-    prerender: {
-      enabled: true,
-      // Follow <a> links discovered in each rendered page so all static
-      // routes (/, /login, /signup, /check-email) are written to disk.
-      crawlLinks: true,
+    // Disable @cloudflare/vite-plugin so the server bundle targets Node.js.
+    // This lets TanStack Start's prerender step start a local preview server
+    // and write static HTML into dist/client/, giving Netlify an index.html
+    // for its SPA fallback redirect (/* → /index.html).
+    cloudflare: false,
+    tanstackStart: {
+        prerender: {
+            enabled: true,
+            // Follow <a> links discovered in each rendered page so all static
+            // routes (/, /login, /signup, /check-email) are written to disk.
+            crawlLinks: true,
+        },
     },
-  },
 });

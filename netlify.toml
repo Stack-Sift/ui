@@ -6,11 +6,12 @@
 # redirect below, and the client-side router takes over.
 
 [build]
-  command = "npm run build"
+  command = "bun run build"
   publish = "dist/client"
 
 [build.environment]
   NODE_VERSION = "20"
+  BUN_VERSION = "latest"
   # The Supabase project URL and publishable/anon key are PUBLIC identifiers
   # designed to ship in browser bundles (CSP, preconnect, client SDK init).
   # They legitimately appear in code; Netlify's secret scanner gives false
